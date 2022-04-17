@@ -2,11 +2,11 @@ import 'dart:convert';
 
 class Dog {
   final int? id;
-  final String name;
+  final String? name;
 
   Dog({
     this.id,
-    required this.name,
+    this.name,
   });
 
   Map<String, dynamic> toMap() {

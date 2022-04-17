@@ -1,32 +1,45 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'package:mock_sqlite/datahelper/database_helper.dart';
 
 import '../models/dog.dart';
 
-class DogRepository {
+class DogRepository with ChangeNotifier {
   late Database db;
+  List<Dog> dogs = [];
 
-  Future<List<Dog>> getDogs() async {
+  Future<void> getDogs() async {
     db = await DataBaseHelper.instance.database;
     final resultado = await db.query('dogs');
-    List<Dog> dogs = resultado.isNotEmpty
+    List<Dog> dogsSaved = resultado.isNotEmpty
         ? resultado.map((dog) => Dog.fromMap(dog)).toList()
         : [];
-    return dogs;
+    dogs = dogsSaved;
+    notifyListeners();
   }
 
-  Future<int> insertDog(Dog dog) async {
+  Future<void> insertDog(Dog dog) async {
     db = await DataBaseHelper.instance.database;
     final resultado = await db.insert(
       'dogs',
       dog.toMap(),
     );
-    return resultado;
+    dogs.add(Dog(id: resultado, name: dog.name));
+    notifyListeners();
   }
 
   Future<void> deleteDog(int id) async {
     db = await DataBaseHelper.instance.database;
     await db.delete('dogs', where: 'id = ?', whereArgs: [id]);
+    dogs = dogs.where((value) => value.id != id).toList();
+    notifyListeners();
+  }
+
+  Future<void> updateDog(Dog dog) async {
+    db = await DataBaseHelper.instance.database;
+    await db.update('dogs', dog.toMap(), where: 'id = ?', whereArgs: [dog.id]);
+    dogs[dogs.indexWhere((existingDog) => existingDog.id == dog.id)] = dog;
+    notifyListeners();
   }
 }
